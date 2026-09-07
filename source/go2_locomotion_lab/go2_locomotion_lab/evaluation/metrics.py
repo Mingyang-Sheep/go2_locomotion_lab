@@ -5,7 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 import torch
-
 from isaaclab.managers import SceneEntityCfg
 
 from ..tasks.locomotion import mdp

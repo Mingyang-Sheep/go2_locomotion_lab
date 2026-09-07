@@ -51,4 +51,3 @@ def official_robot_contract() -> dict[str, object]:
         "effort_limit": actuator.effort_limit,
         "velocity_limit": actuator.velocity_limit,
     }
-

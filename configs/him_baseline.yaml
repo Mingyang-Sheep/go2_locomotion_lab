@@ -1,6 +1,19 @@
 name: HIM-Baseline
-status: placeholder
+status: implemented
 inherits: common_go2_locomotion
 phase: C
 algorithm_actor_critic_shared_with_competition: false
-
+train_task: Go2-Locomotion-HIM-Baseline-v0
+play_task: Go2-Locomotion-HIM-Baseline-Play-v0
+observation:
+  one_step_dim: 45
+  history_steps: 6
+  actor_dim: 270
+  critic_dim: 235
+estimator:
+  velocity_dim: 3
+  hybrid_latent_dim: 16
+  prototypes: 32
+export:
+  formats: [torchscript, onnx]
+  deployment_contract: deploy.json

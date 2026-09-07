@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Verify that the unmodified official Go2 velocity task can reset and step."""
+
 import argparse
 
 from isaaclab.app import AppLauncher
@@ -13,9 +14,8 @@ launcher = AppLauncher(args)
 simulation_app = launcher.app
 
 import gymnasium as gym
-import torch
-
 import isaaclab_tasks  # noqa: F401, E402
+import torch
 from isaaclab_tasks.utils import parse_env_cfg
 
 

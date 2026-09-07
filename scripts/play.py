@@ -4,9 +4,8 @@
 import argparse
 import time
 
-from isaaclab.app import AppLauncher
-
 from common import DEFAULT_PLAY_TASK, add_task_args
+from isaaclab.app import AppLauncher
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_task_args(parser, DEFAULT_PLAY_TASK)
@@ -21,15 +20,13 @@ args = parser.parse_args()
 app_launcher = AppLauncher(args)
 simulation_app = app_launcher.app
 
+import go2_locomotion_lab  # noqa: F401, E402
 import gymnasium as gym
 import torch
-from rsl_rl.runners import OnPolicyRunner
-
+from common import apply_overrides, prepare_agent_cfg, resolve_checkpoint
 from isaaclab_rl.rsl_rl import RslRlVecEnvWrapper
 from isaaclab_tasks.utils.parse_cfg import load_cfg_from_registry
-
-import go2_locomotion_lab  # noqa: F401, E402
-from common import apply_overrides, prepare_agent_cfg, resolve_checkpoint
+from rsl_rl.runners import OnPolicyRunner
 
 
 def main() -> None:

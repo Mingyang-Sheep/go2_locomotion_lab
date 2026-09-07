@@ -1,8 +1,8 @@
-"""HIM algorithm boundary (Phase C placeholder only)."""
+"""HIM-specific estimator, actor and PPO integration."""
 
-HIM_IMPLEMENTED = False
+from .cfg import HimActorModelCfg, HimPpoAlgorithmCfg
+from .estimator import HimEstimator
+from .model import HimActorModel
+from .ppo import HimPPO
 
-
-class HimAlgorithmNotImplementedError(NotImplementedError):
-    """Raised if a caller attempts to train the reserved HIM branch."""
-
+__all__ = ["HimActorModel", "HimActorModelCfg", "HimEstimator", "HimPPO", "HimPpoAlgorithmCfg"]

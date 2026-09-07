@@ -17,4 +17,3 @@ __all__ = [
     "reset_joints_by_scale",
     "reset_root_state_uniform",
 ]
-

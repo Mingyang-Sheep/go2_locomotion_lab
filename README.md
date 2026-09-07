@@ -1,13 +1,14 @@
 # Go2 Locomotion Lab
 
 Independent Unitree Go2 locomotion training platform built on Isaac Lab and
-RSL-RL. The current deliverable is **Competition-PPO-Baseline** only: velocity
-locomotion from training through checkpoint playback and JSON/CSV evaluation.
+RSL-RL. It contains separate Competition PPO and HIM locomotion routes, both with
+training, checkpoint playback, export and unified evaluation. HIM additionally has
+MuJoCo Sim2Sim and a safety-gated Unitree SDK2 deployment adapter.
 
 Competition and HIM are parallel routes. They share the robot, terrain, command,
 control, and evaluation contracts; they do not share an ActorCritic implementation.
-HIM is an interface placeholder in Phase A. This repository contains no KaiWu
-workflow wrappers and no navigation or deployment stack.
+HIM owns a separate estimator, actor and PPO extension. This repository contains no
+KaiWu workflow wrappers and no navigation stack.
 
 ## Verified server baseline
 
@@ -41,12 +42,13 @@ go2_locomotion_lab/
 │       ├── assets/                  # official Go2 + centralized terrain
 │       ├── tasks/locomotion/        # shared environment and MDP terms
 │       ├── algorithms/competition/  # RSL-RL PPO configuration
-│       ├── algorithms/him/          # placeholder boundary only
+│       ├── algorithms/him/          # estimator, actor and PPO integration
 │       └── evaluation/              # route-independent metrics/reports
 ├── scripts/                         # train, play, evaluate, export
 ├── configs/                         # experiment inventory
 ├── tests/
 ├── docs/
+├── requirements-deployment.txt      # optional ONNX/MuJoCo runtime
 └── third_party/
 ```
 
@@ -103,6 +105,21 @@ Evaluation writes `outputs/evaluation/evaluation.json` and `.csv`. Export uses:
 ```bash
 python scripts/export.py --headless --checkpoint PATH/model_1500.pt
 ```
+
+## HIM train to deployment
+
+```bash
+python scripts/train.py --task Go2-Locomotion-HIM-Baseline-v0 \
+  --headless --num_envs 4096 --max_iterations 1500
+python scripts/export.py --task Go2-Locomotion-HIM-Baseline-Play-v0 \
+  --headless --checkpoint PATH/model_1500.pt --output_dir outputs/him_policy
+python scripts/sim2sim.py --policy-dir outputs/him_policy \
+  --model PATH/unitree_mujoco/unitree_robots/go2/scene.xml --headless
+python scripts/deploy_go2.py --policy-dir outputs/him_policy --dry-run
+```
+
+See [HIM baseline](docs/HIM_BASELINE.md) and the mandatory
+[deployment checklist](docs/DEPLOYMENT.md) before connecting a robot.
 
 ## Smoke tests
 

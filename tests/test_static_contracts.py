@@ -49,4 +49,3 @@ def test_no_out_of_scope_platform_code():
     source = "\n".join(path.read_text(encoding="utf-8") for path in PACKAGE.rglob("*.py"))
     for forbidden in ("EnvWrapper", "kaiwudrl", "RewardBridge", "NavGrid", "UWB"):
         assert forbidden not in source
-

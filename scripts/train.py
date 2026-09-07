@@ -4,9 +4,8 @@
 import argparse
 from datetime import datetime
 
-from isaaclab.app import AppLauncher
-
 from common import PROJECT_ROOT, add_task_args
+from isaaclab.app import AppLauncher
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_task_args(parser)
@@ -23,15 +22,13 @@ args = parser.parse_args()
 app_launcher = AppLauncher(args)
 simulation_app = app_launcher.app
 
+import go2_locomotion_lab  # noqa: F401, E402
 import gymnasium as gym
-from rsl_rl.runners import OnPolicyRunner
-
+from common import apply_overrides, prepare_agent_cfg, resolve_checkpoint
 from isaaclab.utils.io import dump_yaml
 from isaaclab_rl.rsl_rl import RslRlVecEnvWrapper
 from isaaclab_tasks.utils.parse_cfg import load_cfg_from_registry
-
-import go2_locomotion_lab  # noqa: F401, E402
-from common import apply_overrides, prepare_agent_cfg, resolve_checkpoint
+from rsl_rl.runners import OnPolicyRunner
 
 
 def main() -> None:
@@ -70,7 +67,9 @@ def main() -> None:
     runner = OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=str(log_dir), device=agent_cfg.device)
     runner.add_git_repo_to_log(__file__)
     if args.resume:
-        resume_path = resolve_checkpoint(args.checkpoint, agent_cfg.experiment_name, args.load_run, args.load_checkpoint)
+        resume_path = resolve_checkpoint(
+            args.checkpoint, agent_cfg.experiment_name, args.load_run, args.load_checkpoint
+        )
         print(f"[INFO] Resuming from {resume_path}")
         runner.load(str(resume_path))
     print("[INFO] Starting PPO learn", flush=True)

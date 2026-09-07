@@ -20,4 +20,3 @@ def write_report(metrics: dict, output_dir: str | Path, stem: str = "evaluation"
         writer.writeheader()
         writer.writerow(metrics)
     return json_path, csv_path
-

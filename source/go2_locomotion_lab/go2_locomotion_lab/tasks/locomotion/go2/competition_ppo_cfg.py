@@ -3,4 +3,3 @@
 from ....algorithms.competition.ppo_cfg import CompetitionPpoBaselineRunnerCfg
 
 __all__ = ["CompetitionPpoBaselineRunnerCfg"]
-

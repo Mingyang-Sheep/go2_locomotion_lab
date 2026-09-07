@@ -15,13 +15,16 @@ args = parser.parse_args()
 launcher = AppLauncher(args)
 simulation_app = launcher.app
 
+import go2_locomotion_lab  # noqa: F401, E402
 import gymnasium as gym
 import torch
-
+from go2_locomotion_lab.tasks.locomotion.go2 import (
+    ACTION_DIM,
+    HIM_POLICY_OBSERVATION_DIM,
+    PROPRIO_OBSERVATION_DIM,
+    set_fixed_command,
+)
 from isaaclab_tasks.utils.parse_cfg import load_cfg_from_registry
-
-import go2_locomotion_lab  # noqa: F401, E402
-from go2_locomotion_lab.tasks.locomotion.go2 import ACTION_DIM, PROPRIO_OBSERVATION_DIM, set_fixed_command
 
 
 def main() -> None:
@@ -31,21 +34,21 @@ def main() -> None:
     env_cfg.sim.device = args.device or env_cfg.sim.device
     set_fixed_command(env_cfg, 0.4, 0.0, 0.0)
     env = gym.make(args.task, cfg=env_cfg)
+    expected_obs_dim = HIM_POLICY_OBSERVATION_DIM if "HIM" in args.task else PROPRIO_OBSERVATION_DIM
+    print("[SMOKE] resetting environment", flush=True)
     obs, _ = env.reset()
-    assert obs["policy"].shape == (args.num_envs, PROPRIO_OBSERVATION_DIM), obs["policy"].shape
+    print("[SMOKE] reset complete", flush=True)
+    assert obs["policy"].shape == (args.num_envs, expected_obs_dim), obs["policy"].shape
     assert env.unwrapped.action_manager.total_action_dim == ACTION_DIM
     actions = torch.zeros((args.num_envs, ACTION_DIM), device=env.unwrapped.device)
     for _ in range(args.num_steps):
         obs, reward, terminated, truncated, _ = env.step(actions)
-        assert obs["policy"].shape == (args.num_envs, PROPRIO_OBSERVATION_DIM)
+        assert obs["policy"].shape == (args.num_envs, expected_obs_dim)
         assert torch.isfinite(obs["policy"]).all()
         assert torch.isfinite(reward).all()
         assert terminated.shape == (args.num_envs,)
         assert truncated.shape == (args.num_envs,)
-    print(
-        f"SMOKE_OK num_envs={args.num_envs} obs={tuple(obs['policy'].shape)} "
-        f"actions={ACTION_DIM} reward_finite=True"
-    )
+    print(f"SMOKE_OK num_envs={args.num_envs} obs={tuple(obs['policy'].shape)} actions={ACTION_DIM} reward_finite=True")
     env.close()
 
 

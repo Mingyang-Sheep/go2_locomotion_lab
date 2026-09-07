@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import torch
-
 from isaaclab.envs import mdp as isaac_mdp
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.sensors import ContactSensor
@@ -70,4 +69,3 @@ def undesired_contacts(env, threshold: float, sensor_cfg: SceneEntityCfg):
 
 def termination(env):
     return isaac_mdp.is_terminated(env)
-

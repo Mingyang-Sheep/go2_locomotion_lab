@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import torch
 from isaaclab.envs import mdp as isaac_mdp
 from isaaclab.managers import SceneEntityCfg
 
@@ -35,3 +36,29 @@ def height_scan(env, sensor_cfg: SceneEntityCfg, offset: float = 0.5):
 
     return isaac_mdp.height_scan(env, sensor_cfg, offset)
 
+
+def base_lin_vel(env, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")):
+    """Return privileged base linear velocity in the body frame."""
+
+    return isaac_mdp.base_lin_vel(env, asset_cfg)
+
+
+def proprio45(
+    env,
+    command_name: str = "base_velocity",
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+    action_name: str | None = "joint_pos",
+):
+    """Build one time-major frame of the shared 45-D proprioception contract."""
+
+    return torch.cat(
+        (
+            base_ang_vel(env, asset_cfg),
+            projected_gravity(env, asset_cfg),
+            velocity_command(env, command_name),
+            joint_pos(env, asset_cfg),
+            joint_vel(env, asset_cfg),
+            previous_action(env, action_name),
+        ),
+        dim=-1,
+    )

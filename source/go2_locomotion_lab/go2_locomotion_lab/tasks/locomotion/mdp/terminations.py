@@ -10,4 +10,3 @@ def time_out(env):
 
 def illegal_contact(env, sensor_cfg: SceneEntityCfg, threshold: float):
     return isaac_mdp.illegal_contact(env, threshold, sensor_cfg)
-

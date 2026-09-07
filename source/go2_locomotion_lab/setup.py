@@ -17,7 +17,10 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     python_requires=">=3.10",
-    install_requires=["gymnasium", "toml"],
+    install_requires=["gymnasium", "numpy", "toml"],
+    extras_require={
+        "deployment": ["onnxruntime>=1.20,<2"],
+        "sim2sim": ["mujoco>=3.2,<4", "onnxruntime>=1.20,<2"],
+    },
     zip_safe=False,
 )
-

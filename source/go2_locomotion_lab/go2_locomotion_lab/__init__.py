@@ -1,11 +1,10 @@
-"""Go2 Locomotion Lab.
+"""Go2 Locomotion Lab with an Isaac-independent deployment runtime."""
 
-Importing the package registers its Gymnasium tasks. Isaac Sim must be launched
-before constructing an environment, but configuration modules remain importable
-for tooling and contract tests.
-"""
+import importlib.util
 
-from .tasks import *  # noqa: F401, F403
+# Isaac Sim exposes pxr only after AppLauncher starts. Keeping this conditional
+# lets the exported ONNX runtime run on a lightweight MuJoCo or robot computer.
+if importlib.util.find_spec("pxr") is not None:
+    from .tasks import *  # noqa: F401, F403
 
 __version__ = "0.1.0"
-

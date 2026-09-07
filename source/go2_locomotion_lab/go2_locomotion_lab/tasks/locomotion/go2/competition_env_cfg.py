@@ -33,4 +33,3 @@ class CompetitionHighStepEnvCfg(CompetitionBaselineEnvCfg):
     """Reserved for Phase B; no high-step rewards are enabled in Phase A."""
 
     IMPLEMENTED = False
-
