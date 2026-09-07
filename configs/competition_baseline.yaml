@@ -1,0 +1,10 @@
+name: Competition-PPO-Baseline
+task: Go2-Locomotion-Competition-Baseline-v0
+algorithm: rsl_rl_ppo
+status: implemented
+inherits: common_go2_locomotion
+observation: proprio45
+critic_privileged_observation: height_scan_native
+action: joint_position_target_12
+control_dt: 0.02
+

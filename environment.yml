@@ -1,0 +1,9 @@
+name: go2_locomotion_lab
+channels:
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+# Isaac Sim/Lab and PyTorch are intentionally installed from the local server stack.
+# See README.md for the non-destructive setup commands used on this machine.
+

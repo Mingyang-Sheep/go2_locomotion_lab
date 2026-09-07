@@ -1,0 +1,6 @@
+name: HIM-Baseline
+status: placeholder
+inherits: common_go2_locomotion
+phase: C
+algorithm_actor_critic_shared_with_competition: false
+

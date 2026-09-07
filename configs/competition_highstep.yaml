@@ -1,0 +1,6 @@
+name: Competition-HighStep
+status: placeholder
+inherits: competition_baseline
+phase: B
+notes: No high-step-specific reward is enabled in the Phase A baseline.
+
