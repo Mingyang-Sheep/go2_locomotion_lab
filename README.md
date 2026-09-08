@@ -116,7 +116,9 @@ tracking, stability, control, contact, reward components, and termination rates.
 Start the shared comparison server with:
 
 ```bash
-python scripts/launch_tensorboard.py
+conda activate go2_locomotion_lab
+cd "/home/fenglab/lmy/RL/Go2 Locomotion Platform/go2_locomotion_lab"
+python scripts/launch_tensorboard.py --host 127.0.0.1 --port 6006
 ```
 
 Forward remote port `6006` in VS Code and open `http://127.0.0.1:6006` on the

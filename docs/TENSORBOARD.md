@@ -27,7 +27,8 @@ Run this in a VS Code Remote SSH terminal from the repository root:
 
 ```bash
 conda activate go2_locomotion_lab
-python scripts/launch_tensorboard.py
+cd "/home/fenglab/lmy/RL/Go2 Locomotion Platform/go2_locomotion_lab"
+python scripts/launch_tensorboard.py --host 127.0.0.1 --port 6006
 ```
 
 On a fresh environment, install the standalone monitoring dependencies once with
