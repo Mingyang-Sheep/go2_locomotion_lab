@@ -43,7 +43,8 @@ go2_locomotion_lab/
 │       ├── tasks/locomotion/        # shared environment and MDP terms
 │       ├── algorithms/competition/  # RSL-RL PPO configuration
 │       ├── algorithms/him/          # estimator, actor and PPO integration
-│       └── evaluation/              # route-independent metrics/reports
+│       ├── evaluation/              # route-independent metrics/reports
+│       └── monitoring/              # shared TensorBoard metrics/tag contract
 ├── scripts/                         # train, play, evaluate, export
 ├── configs/                         # experiment inventory
 ├── tests/
@@ -60,7 +61,17 @@ On this server the environment and extension are prepared with:
 conda activate go2_locomotion_lab
 cd "/home/fenglab/lmy/RL/Go2 Locomotion Platform/go2_locomotion_lab"
 python -m pip install --no-deps -e source/go2_locomotion_lab
+python -m pip install -r requirements-monitoring.txt
 ```
+
+This server uses a standalone Isaac Sim installation. In each new shell, inject
+its official Python and shared-library paths before running train/play/evaluate:
+
+```bash
+source /home/fenglab/IsaacSim/setup_conda_env.sh
+```
+
+TensorBoard itself does not require Isaac Sim to be running.
 
 ## Validation
 
@@ -100,6 +111,18 @@ python scripts/evaluate.py --headless --checkpoint PATH/model_1500.pt \
   --num_envs 128 --vx 0.4 --vy 0.0 --wz 0.0
 ```
 
+Training uses RSL-RL's TensorBoard writer and records PPO/HIM losses, velocity
+tracking, stability, control, contact, reward components, and termination rates.
+Start the shared comparison server with:
+
+```bash
+python scripts/launch_tensorboard.py
+```
+
+Forward remote port `6006` in VS Code and open `http://127.0.0.1:6006` on the
+local Windows machine. See [TensorBoard monitoring](docs/TENSORBOARD.md) for the
+complete tag contract, SSH forwarding alternatives, and event-file validation.
+
 Evaluation writes `outputs/evaluation/evaluation.json` and `.csv`. Export uses:
 
 ```bash
@@ -132,4 +155,4 @@ python scripts/train.py --headless --num_envs 128 --max_iterations 2 \
 
 See [architecture](docs/ARCHITECTURE.md),
 [baseline contract](docs/COMPETITION_BASELINE.md), [HIM plan](docs/HIM_PLAN.md),
-and [roadmap](docs/ROADMAP.md).
+[TensorBoard monitoring](docs/TENSORBOARD.md), and [roadmap](docs/ROADMAP.md).

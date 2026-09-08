@@ -1,0 +1,2 @@
+# Standalone dashboard and event-file validation; no TensorFlow installation required.
+tensorboard>=2.18,<3

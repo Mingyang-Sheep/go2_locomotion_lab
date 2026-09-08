@@ -20,6 +20,7 @@ setup(
     install_requires=["gymnasium", "numpy", "toml"],
     extras_require={
         "deployment": ["onnxruntime>=1.20,<2"],
+        "monitoring": ["tensorboard>=2.18,<3"],
         "sim2sim": ["mujoco>=3.2,<4", "onnxruntime>=1.20,<2"],
     },
     zip_safe=False,

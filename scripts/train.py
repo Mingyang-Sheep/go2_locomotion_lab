@@ -25,8 +25,8 @@ simulation_app = app_launcher.app
 import go2_locomotion_lab  # noqa: F401, E402
 import gymnasium as gym
 from common import apply_overrides, prepare_agent_cfg, resolve_checkpoint
+from go2_locomotion_lab.monitoring.training_metrics import TrainingMetricsRslRlVecEnvWrapper
 from isaaclab.utils.io import dump_yaml
-from isaaclab_rl.rsl_rl import RslRlVecEnvWrapper
 from isaaclab_tasks.utils.parse_cfg import load_cfg_from_registry
 from rsl_rl.runners import OnPolicyRunner
 
@@ -62,7 +62,7 @@ def main() -> None:
     print("[INFO] Creating Isaac Lab environment", flush=True)
     env = gym.make(args.task, cfg=env_cfg)
     print("[INFO] Creating RSL-RL wrapper", flush=True)
-    env = RslRlVecEnvWrapper(env, clip_actions=agent_cfg.clip_actions)
+    env = TrainingMetricsRslRlVecEnvWrapper(env, clip_actions=agent_cfg.clip_actions)
     print("[INFO] Creating RSL-RL runner", flush=True)
     runner = OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=str(log_dir), device=agent_cfg.device)
     runner.add_git_repo_to_log(__file__)
