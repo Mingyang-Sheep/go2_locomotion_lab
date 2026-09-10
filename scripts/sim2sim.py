@@ -7,8 +7,7 @@ import argparse
 import json
 from pathlib import Path
 
-import numpy as np
-from go2_locomotion_lab.deployment import DeploymentConfig, ObservationHistory, OnnxPolicy, build_proprio
+from go2_locomotion_lab.deployment import MujocoRuntime
 
 
 def parse_args() -> argparse.Namespace:
@@ -20,102 +19,91 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--wz", type=float, default=0.0)
     parser.add_argument("--steps", type=int, default=1000, help="Number of 50 Hz policy steps")
     parser.add_argument("--headless", action="store_true")
+    parser.add_argument(
+        "--viewer",
+        choices=("mujoco", "mjviser"),
+        default="mujoco",
+        help="Interactive viewer when --headless is omitted (mjviser requires the deployment extra).",
+    )
+    parser.add_argument("--host", default="127.0.0.1", help="mjviser bind host; use loopback with SSH forwarding")
+    parser.add_argument("--port", type=int, default=8080, help="mjviser/Viser HTTP port")
     parser.add_argument("--output", type=Path, default=None)
     return parser.parse_args()
 
 
-def sensor(model, data, mujoco, name: str) -> np.ndarray:
-    sensor_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SENSOR, name)
-    if sensor_id < 0:
-        raise KeyError(f"MuJoCo sensor not found: {name}")
-    start = model.sensor_adr[sensor_id]
-    size = model.sensor_dim[sensor_id]
-    return np.asarray(data.sensordata[start : start + size]).copy()
+def add_command_controls(server, runtime: MujocoRuntime) -> None:
+    """Expose the trained command range as live Viser controls."""
+    import numpy as np
+
+    command = runtime.get_command()
+    ranges = runtime.config.command_ranges
+    with server.gui.add_folder("Go2 Command"):
+        sliders = []
+        for label, index in (("vx (m/s)", 0), ("vy (m/s)", 1), ("wz (rad/s)", 2)):
+            slider = server.gui.add_slider(
+                label,
+                min=float(ranges[index, 0]),
+                max=float(ranges[index, 1]),
+                step=0.01,
+                initial_value=float(command[index]),
+            )
+            sliders.append(slider)
+
+        def update(_) -> None:
+            runtime.set_command(np.array([slider.value for slider in sliders], dtype=np.float32))
+
+        for slider in sliders:
+            slider.on_update(update)
+
+
+def run_mjviser(runtime: MujocoRuntime, args: argparse.Namespace) -> None:
+    try:
+        import viser
+        from mjviser import Viewer
+    except ImportError as exc:
+        raise RuntimeError("Install mjviser with `python -m pip install -r requirements-mjviser.txt`") from exc
+
+    server = viser.ViserServer(host=args.host, port=args.port)
+    viewer = Viewer(
+        runtime.model,
+        runtime.data,
+        step_fn=runtime.step_physics,
+        reset_fn=runtime.reset,
+        server=server,
+    )
+    add_command_controls(server, runtime)
+    print(f"[INFO] mjviser URL: http://{args.host}:{args.port}", flush=True)
+    viewer.run()
+
+
+def run_native_viewer(runtime: MujocoRuntime, steps: int) -> None:
+    import mujoco.viewer
+
+    with mujoco.viewer.launch_passive(runtime.model, runtime.data) as viewer:
+        for _ in range(steps):
+            if not viewer.is_running():
+                break
+            runtime.step_control()
+            viewer.sync()
 
 
 def main() -> None:
     args = parse_args()
-    try:
-        import mujoco
-    except ImportError as exc:
-        raise RuntimeError("Install the optional 'mujoco' package for Sim2Sim") from exc
+    runtime = MujocoRuntime.from_paths(args.policy_dir, args.model)
+    runtime.set_command((args.vx, args.vy, args.wz))
 
-    config = DeploymentConfig.load(args.policy_dir / "deploy.json")
-    policy = OnnxPolicy(args.policy_dir / "policy.onnx")
-    model = mujoco.MjModel.from_xml_path(str(args.model.resolve()))
-    data = mujoco.MjData(model)
-    if model.nkey:
-        mujoco.mj_resetDataKeyframe(model, data, 0)
+    if args.headless:
+        result = runtime.run_headless(args.steps)
+        print(json.dumps(result, indent=2))
+        if args.output:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+        return
 
-    qpos_addresses = []
-    qvel_addresses = []
-    actuator_ids = []
-    for name in config.joint_names:
-        xml_name = f"{name}_joint"
-        joint_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, xml_name)
-        actuator_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_ACTUATOR, name)
-        if joint_id < 0 or actuator_id < 0:
-            raise KeyError(f"Go2 joint/actuator not found in MuJoCo model: {name}")
-        qpos_addresses.append(model.jnt_qposadr[joint_id])
-        qvel_addresses.append(model.jnt_dofadr[joint_id])
-        actuator_ids.append(actuator_id)
-    data.qpos[qpos_addresses] = config.default_joint_pos
-    mujoco.mj_forward(model, data)
-
-    sim_steps_per_control = round(config.control_dt / model.opt.timestep)
-    if not np.isclose(sim_steps_per_control * model.opt.timestep, config.control_dt):
-        raise ValueError("MuJoCo timestep must divide the exported 50 Hz control period")
-    command = config.validate_command((args.vx, args.vy, args.wz))
-    previous_action = np.zeros(12, dtype=np.float32)
-    history = ObservationHistory(config.history_steps)
-    max_torque = 0.0
-
-    viewer_context = None
-    if not args.headless:
-        import mujoco.viewer
-
-        viewer_context = mujoco.viewer.launch_passive(model, data)
-    try:
-        for _ in range(args.steps):
-            joint_pos = np.asarray(data.qpos[qpos_addresses], dtype=np.float32)
-            joint_vel = np.asarray(data.qvel[qvel_addresses], dtype=np.float32)
-            frame = build_proprio(
-                sensor(model, data, mujoco, "imu_gyro"),
-                sensor(model, data, mujoco, "imu_quat"),
-                command,
-                joint_pos,
-                joint_vel,
-                previous_action,
-                config.default_joint_pos,
-            )
-            action = policy(history.append(frame))[0]
-            target = config.action_to_joint_target(action)
-            for _ in range(sim_steps_per_control):
-                torque = (
-                    config.stiffness * (target - data.qpos[qpos_addresses]) - config.damping * data.qvel[qvel_addresses]
-                )
-                torque = np.clip(torque, -config.effort_limits, config.effort_limits)
-                data.ctrl[actuator_ids] = torque
-                max_torque = max(max_torque, float(np.abs(torque).max()))
-                mujoco.mj_step(model, data)
-            previous_action = action
-            if viewer_context is not None:
-                viewer_context.sync()
-    finally:
-        if viewer_context is not None:
-            viewer_context.close()
-
-    result = {
-        "status": "SIM2SIM_OK",
-        "policy_steps": args.steps,
-        "sim_time": float(data.time),
-        "base_position": np.asarray(data.qpos[:3]).tolist(),
-        "max_abs_torque": max_torque,
-    }
-    print(json.dumps(result, indent=2))
-    if args.output:
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+    if args.viewer == "mjviser":
+        run_mjviser(runtime, args)
+    else:
+        run_native_viewer(runtime, args.steps)
 
 
 if __name__ == "__main__":

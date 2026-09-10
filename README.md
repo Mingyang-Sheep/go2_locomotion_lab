@@ -50,6 +50,7 @@ go2_locomotion_lab/
 ├── tests/
 ├── docs/
 ├── requirements-deployment.txt      # optional ONNX/MuJoCo runtime
+├── requirements-mjviser.txt         # optional Web Viewer environment
 └── third_party/
 ```
 
@@ -140,8 +141,15 @@ python scripts/export.py --task Go2-Locomotion-HIM-Baseline-Play-v0 \
   --headless --checkpoint PATH/model_1500.pt --output_dir outputs/him_policy
 python scripts/sim2sim.py --policy-dir outputs/him_policy \
   --model PATH/unitree_mujoco/unitree_robots/go2/scene.xml --headless
+python scripts/mjviser_viewer.py --policy-dir outputs/him_policy \
+  --model PATH/unitree_mujoco/unitree_robots/go2/scene.xml \
+  --host 127.0.0.1 --port 8080
 python scripts/deploy_go2.py --policy-dir outputs/him_policy --dry-run
 ```
+
+Forward remote port `8080` in the VS Code Ports view and open its forwarded address
+in the local Windows browser. The Web Viewer and headless batch mode share the same
+MuJoCo runtime, ONNX observation/action path, and PD controller.
 
 See [HIM baseline](docs/HIM_BASELINE.md) and the mandatory
 [deployment checklist](docs/DEPLOYMENT.md) before connecting a robot.
